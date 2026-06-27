@@ -2,7 +2,7 @@ import json
 import argparse
 import os
 import sys
-import random # Imported temporarily to mock the computer vision scores
+import random 
 
 def generate_recommendations(scan_results: dict, database_path: str = "products.json") -> list:
     """Compare scan scores against product thresholds to generate a routine."""
@@ -21,18 +21,18 @@ def generate_recommendations(scan_results: dict, database_path: str = "products.
         return list(set(routine))
         
     except FileNotFoundError:
-        print(f"Error: Could not find {database_path}. Cannot generate recommendations.")
+        print(f"\n[!] Note: Could not find '{database_path}'. Skipping product recommendations.")
         return []
         
 def get_user_profile() -> dict:
     """Prompt the user for baseline skincare context that a camera cannot see."""
-    print("\n--- Skincare Context Questionnaire ---")
+    print("\n✨ Let's get to know your skin a bit better ✨")
     
     profile = {}
     
     # We only ask for hidden factors now; the camera does the diagnosing
-    profile['skin_type'] = input("What is your baseline skin type? (Oily/Dry/Combo/Normal): ").strip().lower()
-    profile['sensitivity'] = input("Is your skin sensitive? (y/n): ").strip().lower() == 'y'
+    profile['skin_type'] = input("How would you describe your skin naturally? (Oily/Dry/Combo/Normal): ").strip().capitalize()
+    profile['sensitivity'] = input("Does your skin tend to be sensitive or easily irritated? (y/n): ").strip().lower() == 'y'
     
     return profile
 
@@ -45,9 +45,9 @@ def analyze_image_mock(image_path: str) -> dict:
     Placeholder for the OpenCV/MediaPipe pipeline. 
     Eventually, this will analyze pixels and return actual metrics.
     """
-    print(f"\n[System] Scanning {image_path} for skin conditions...")
+    print(f"\n🔍 Scanning your image ({image_path})...")
     
-    # Mocking detection severity scores (0.0 to 1.0) for testing the CLI
+    # Mocking detection severity scores (0.0 to 1.0)
     detections = {
         "acne_severity": random.uniform(0.1, 0.9),
         "dryness_level": random.uniform(0.1, 0.9),
@@ -78,16 +78,32 @@ def main():
     scan_results = analyze_image_mock(args.image_path)
 
     # 3. Display the raw data before the recommendation engine processes it
-    print("\n--- Final Analysis Summary ---")
-    print(f"User Baseline: {user_profile}")
-    print("\nDetected Conditions (Severity Scores 0.0 - 1.0):")
+    print("\n--- 📋 Scan Results ---")
     
     for condition, score in scan_results.items():
-        # Format the keys to look clean in the terminal
         formatted_name = condition.replace('_', ' ').title()
-        print(f" - {formatted_name}: {score:.2f}")
         
-    print("\nSystem ready. Next step: Map these scores to product recommendations.")
+        # Humanize the raw 0.0-1.0 float into a readable intensity level
+        if score > 0.7:
+            intensity = "High"
+        elif score > 0.4:
+            intensity = "Moderate"
+        else:
+            intensity = "Low"
+            
+        print(f" • {formatted_name}: {intensity} ({int(score * 100)}%)")
+
+    # 4. Generate and display the routine
+    routine = generate_recommendations(scan_results)
+    
+    print("\n--- 🧴 Recommended Action Plan ---")
+    if routine:
+        print("Based on your scan, we suggest adding these to your routine:")
+        for product in routine:
+            print(f" [+] {product}")
+        print("\nRemember: Introduce new products slowly to protect your skin barrier!")
+    else:
+        print("Your skin looks well-balanced! Stick to a gentle cleanser and a daily sunscreen.")
 
 if __name__ == "__main__":
     main()

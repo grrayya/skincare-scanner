@@ -104,6 +104,30 @@ def main():
         print("\nRemember: Introduce new products slowly to protect your skin barrier!")
     else:
         print("Your skin looks well-balanced! Stick to a gentle cleanser and a daily sunscreen.")
-
+    
+def save_prescription(user_profile: dict, scan_results: dict, routine: list, filename: str = "skincare_prescription.txt"):
+    """Export the final analysis and routine to a text file."""
+    try:
+        with open(filename, 'w') as file:
+            file.write("=== YOUR SKINCARE PRESCRIPTION ===\n\n")
+            
+            file.write(f"Skin Type: {user_profile.get('skin_type', 'Unknown')}\n")
+            file.write(f"Sensitive: {'Yes' if user_profile.get('sensitivity') else 'No'}\n")
+            
+            file.write("\n--- Detected Conditions ---\n")
+            for condition, score in scan_results.items():
+                file.write(f"{condition.replace('_', ' ').title()}: {int(score * 100)}%\n")
+                
+            file.write("\n--- Recommended Routine ---\n")
+            if routine:
+                for product in routine:
+                    file.write(f"- {product}\n")
+            else:
+                file.write("Skin is balanced. Stick to basic cleanser and SPF.\n")
+                
+        print(f"\n💾 Saved your detailed prescription to '{filename}'")
+    except Exception as e:
+        print(f"\n[!] Could not save prescription: {e}")
+        
 if __name__ == "__main__":
     main()

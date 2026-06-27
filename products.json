@@ -1,0 +1,18 @@
+{
+  "acne_severity": {
+    "threshold": 0.5,
+    "recommendations": ["Salicylic Acid 2% Cleanser", "Niacinamide Serum"]
+  },
+  "dryness_level": {
+    "threshold": 0.6,
+    "recommendations": ["Hyaluronic Acid", "Ceramide Moisturizer"]
+  },
+  "hyperpigmentation": {
+    "threshold": 0.4,
+    "recommendations": ["Vitamin C Serum", "Alpha Arbutin"]
+  },
+  "wrinkle_depth": {
+    "threshold": 0.5,
+    "recommendations": ["Retinol 0.2%", "Peptide Complex"]
+  }
+}

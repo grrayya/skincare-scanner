@@ -13,11 +13,9 @@ def generate_recommendations(scan_results: dict, database_path: str = "products.
             database = json.load(file)
             
         for condition, score in scan_results.items():
-            # Check if the condition exists in our DB and if the severity beats the threshold
             if condition in database and score >= database[condition]["threshold"]:
                 routine.extend(database[condition]["recommendations"])
                 
-        # Remove duplicates in case multiple conditions trigger the same product
         return list(set(routine))
         
     except FileNotFoundError:
@@ -30,9 +28,22 @@ def get_user_profile() -> dict:
     
     profile = {}
     
-    # We only ask for hidden factors now; the camera does the diagnosing
-    profile['skin_type'] = input("How would you describe your skin naturally? (Oily/Dry/Combo/Normal): ").strip().capitalize()
-    profile['sensitivity'] = input("Does your skin tend to be sensitive or easily irritated? (y/n): ").strip().lower() == 'y'
+    # 1. Validate skin type input
+    valid_types = ['oily', 'dry', 'combo', 'normal']
+    while True:
+        skin_input = input("How would you describe your skin naturally? (Oily/Dry/Combo/Normal): ").strip().lower()
+        if skin_input in valid_types:
+            profile['skin_type'] = skin_input.capitalize()
+            break
+        print("  [!] Invalid input. Please enter Oily, Dry, Combo, or Normal.")
+        
+    # 2. Validate sensitivity input
+    while True:
+        sens_input = input("Does your skin tend to be sensitive or easily irritated? (y/n): ").strip().lower()
+        if sens_input in ['y', 'yes', 'n', 'no']:
+            profile['sensitivity'] = sens_input.startswith('y')
+            break
+        print("  [!] Invalid input. Please enter 'y' for yes or 'n' for no.")
     
     return profile
 
@@ -47,7 +58,6 @@ def analyze_image_mock(image_path: str) -> dict:
     """
     print(f"\n🔍 Scanning your image ({image_path})...")
     
-    # Mocking detection severity scores (0.0 to 1.0)
     detections = {
         "acne_severity": random.uniform(0.1, 0.9),
         "dryness_level": random.uniform(0.1, 0.9),
@@ -56,6 +66,30 @@ def analyze_image_mock(image_path: str) -> dict:
     }
     
     return detections
+
+def save_prescription(user_profile: dict, scan_results: dict, routine: list, filename: str = "skincare_prescription.txt"):
+    """Export the final analysis and routine to a text file."""
+    try:
+        with open(filename, 'w') as file:
+            file.write("=== YOUR SKINCARE PRESCRIPTION ===\n\n")
+            
+            file.write(f"Skin Type: {user_profile.get('skin_type', 'Unknown')}\n")
+            file.write(f"Sensitive: {'Yes' if user_profile.get('sensitivity') else 'No'}\n")
+            
+            file.write("\n--- Detected Conditions ---\n")
+            for condition, score in scan_results.items():
+                file.write(f"{condition.replace('_', ' ').title()}: {int(score * 100)}%\n")
+                
+            file.write("\n--- Recommended Routine ---\n")
+            if routine:
+                for product in routine:
+                    file.write(f"- {product}\n")
+            else:
+                file.write("Skin is balanced. Stick to basic cleanser and SPF.\n")
+                
+        print(f"\n💾 Saved your detailed prescription to '{filename}'")
+    except Exception as e:
+        print(f"\n[!] Could not save prescription: {e}")
 
 def main():
     parser = argparse.ArgumentParser(description="Terminal Skincare Analyzer CLI")
@@ -83,7 +117,6 @@ def main():
     for condition, score in scan_results.items():
         formatted_name = condition.replace('_', ' ').title()
         
-        # Humanize the raw 0.0-1.0 float into a readable intensity level
         if score > 0.7:
             intensity = "High"
         elif score > 0.4:
@@ -104,30 +137,9 @@ def main():
         print("\nRemember: Introduce new products slowly to protect your skin barrier!")
     else:
         print("Your skin looks well-balanced! Stick to a gentle cleanser and a daily sunscreen.")
-    
-def save_prescription(user_profile: dict, scan_results: dict, routine: list, filename: str = "skincare_prescription.txt"):
-    """Export the final analysis and routine to a text file."""
-    try:
-        with open(filename, 'w') as file:
-            file.write("=== YOUR SKINCARE PRESCRIPTION ===\n\n")
-            
-            file.write(f"Skin Type: {user_profile.get('skin_type', 'Unknown')}\n")
-            file.write(f"Sensitive: {'Yes' if user_profile.get('sensitivity') else 'No'}\n")
-            
-            file.write("\n--- Detected Conditions ---\n")
-            for condition, score in scan_results.items():
-                file.write(f"{condition.replace('_', ' ').title()}: {int(score * 100)}%\n")
-                
-            file.write("\n--- Recommended Routine ---\n")
-            if routine:
-                for product in routine:
-                    file.write(f"- {product}\n")
-            else:
-                file.write("Skin is balanced. Stick to basic cleanser and SPF.\n")
-                
-        print(f"\n💾 Saved your detailed prescription to '{filename}'")
-    except Exception as e:
-        print(f"\n[!] Could not save prescription: {e}")
         
+    # 5. Export to file (ADDED THIS CALL)
+    save_prescription(user_profile, scan_results, routine)
+
 if __name__ == "__main__":
     main()

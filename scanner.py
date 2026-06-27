@@ -4,6 +4,26 @@ import os
 import sys
 import random # Imported temporarily to mock the computer vision scores
 
+def generate_recommendations(scan_results: dict, database_path: str = "products.json") -> list:
+    """Compare scan scores against product thresholds to generate a routine."""
+    routine = []
+    
+    try:
+        with open(database_path, 'r') as file:
+            database = json.load(file)
+            
+        for condition, score in scan_results.items():
+            # Check if the condition exists in our DB and if the severity beats the threshold
+            if condition in database and score >= database[condition]["threshold"]:
+                routine.extend(database[condition]["recommendations"])
+                
+        # Remove duplicates in case multiple conditions trigger the same product
+        return list(set(routine))
+        
+    except FileNotFoundError:
+        print(f"Error: Could not find {database_path}. Cannot generate recommendations.")
+        return []
+        
 def get_user_profile() -> dict:
     """Prompt the user for baseline skincare context that a camera cannot see."""
     print("\n--- Skincare Context Questionnaire ---")

@@ -2,32 +2,34 @@ import json
 import argparse
 import os
 import sys
-import random 
+import random
+
 
 def generate_recommendations(scan_results: dict, database_path: str = "products.json") -> list:
     """Compare scan scores against product thresholds to generate a routine."""
     routine = []
-    
+
     try:
         with open(database_path, 'r') as file:
             database = json.load(file)
-            
+
         for condition, score in scan_results.items():
             if condition in database and score >= database[condition]["threshold"]:
                 routine.extend(database[condition]["recommendations"])
-                
+
         return list(set(routine))
-        
+
     except FileNotFoundError:
         print(f"\n[!] Note: Could not find '{database_path}'. Skipping product recommendations.")
         return []
-        
+
+
 def get_user_profile() -> dict:
     """Prompt the user for baseline skincare context that a camera cannot see."""
     print("\n✨ Let's get to know your skin a bit better ✨")
-    
+
     profile = {}
-    
+
     # 1. Validate skin type input
     valid_types = ['oily', 'dry', 'combo', 'normal']
     while True:
@@ -36,7 +38,7 @@ def get_user_profile() -> dict:
             profile['skin_type'] = skin_input.capitalize()
             break
         print("  [!] Invalid input. Please enter Oily, Dry, Combo, or Normal.")
-        
+
     # 2. Validate sensitivity input
     while True:
         sens_input = input("Does your skin tend to be sensitive or easily irritated? (y/n): ").strip().lower()
@@ -44,61 +46,70 @@ def get_user_profile() -> dict:
             profile['sensitivity'] = sens_input.startswith('y')
             break
         print("  [!] Invalid input. Please enter 'y' for yes or 'n' for no.")
-    
+
     return profile
+
 
 def validate_image_path(path: str) -> bool:
     """Check if the provided image path exists."""
     return os.path.isfile(path)
 
+
 def analyze_image_mock(image_path: str) -> dict:
     """
-    Placeholder for the OpenCV/MediaPipe pipeline. 
+    Placeholder for the OpenCV/MediaPipe pipeline.
     Eventually, this will analyze pixels and return actual metrics.
     """
     print(f"\n🔍 Scanning your image ({image_path})...")
-    
+
     detections = {
         "acne_severity": random.uniform(0.1, 0.9),
         "dryness_level": random.uniform(0.1, 0.9),
         "hyperpigmentation": random.uniform(0.1, 0.9),
-        "wrinkle_depth": random.uniform(0.1, 0.9)
+        "wrinkle_depth": random.uniform(0.1, 0.9),
     }
-    
+
     return detections
+
 
 def save_prescription(user_profile: dict, scan_results: dict, routine: list, filename: str = "skincare_prescription.txt"):
     """Export the final analysis and routine to a text file."""
     try:
         with open(filename, 'w') as file:
             file.write("=== YOUR SKINCARE PRESCRIPTION ===\n\n")
-            
+
             file.write(f"Skin Type: {user_profile.get('skin_type', 'Unknown')}\n")
             file.write(f"Sensitive: {'Yes' if user_profile.get('sensitivity') else 'No'}\n")
-            
+
             file.write("\n--- Detected Conditions ---\n")
             for condition, score in scan_results.items():
                 file.write(f"{condition.replace('_', ' ').title()}: {int(score * 100)}%\n")
-                
+
             file.write("\n--- Recommended Routine ---\n")
             if routine:
                 for product in routine:
                     file.write(f"- {product}\n")
             else:
                 file.write("Skin is balanced. Stick to basic cleanser and SPF.\n")
-                
+
         print(f"\n💾 Saved your detailed prescription to '{filename}'")
     except Exception as e:
         print(f"\n[!] Could not save prescription: {e}")
 
+
 def main():
     parser = argparse.ArgumentParser(description="Terminal Skincare Analyzer CLI")
     parser.add_argument(
-        "image_path", 
-        type=str, 
+        "image_path",
+        type=str,
         help="Path to the facial image for analysis (e.g., ./images/face.jpg)"
     )
-    
+    parser.add_argument(
+        "-v", "--verbose",
+        action="store_true",
+        help="Enable verbose output to see raw diagnostic data"
+    )
+
     args = parser.parse_args()
 
     if not validate_image_path(args.image_path):
@@ -111,24 +122,31 @@ def main():
     # 2. Run the automated image scan (mocked for now)
     scan_results = analyze_image_mock(args.image_path)
 
-    # 3. Display the raw data before the recommendation engine processes it
+    # 3. Verbose debug output
+    if args.verbose:
+        print("\n=== 🛠️ DEBUG MODE: RAW CV DATA ===")
+        print(f"User Baseline Context: {user_profile}")
+        for condition, score in scan_results.items():
+            print(f"Raw {condition}: {score}")
+        print("===================================\n")
+
+    # 4. Display user-friendly scan results
     print("\n--- 📋 Scan Results ---")
-    
     for condition, score in scan_results.items():
         formatted_name = condition.replace('_', ' ').title()
-        
+
         if score > 0.7:
             intensity = "High"
         elif score > 0.4:
             intensity = "Moderate"
         else:
             intensity = "Low"
-            
+
         print(f" • {formatted_name}: {intensity} ({int(score * 100)}%)")
 
-    # 4. Generate and display the routine
+    # 5. Generate and display the routine
     routine = generate_recommendations(scan_results)
-    
+
     print("\n--- 🧴 Recommended Action Plan ---")
     if routine:
         print("Based on your scan, we suggest adding these to your routine:")
@@ -137,9 +155,10 @@ def main():
         print("\nRemember: Introduce new products slowly to protect your skin barrier!")
     else:
         print("Your skin looks well-balanced! Stick to a gentle cleanser and a daily sunscreen.")
-        
-    # 5. Export to file (ADDED THIS CALL)
+
+    # 6. Export to file
     save_prescription(user_profile, scan_results, routine)
+
 
 if __name__ == "__main__":
     main()

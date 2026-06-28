@@ -3,6 +3,7 @@ import argparse
 import os
 import sys
 import random
+from cv_engine import process_image_with_cv
 
 
 def generate_recommendations(scan_results: dict, database_path: str = "products.json") -> list:
